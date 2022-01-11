@@ -18,19 +18,21 @@ String mensagemSocorro="ISSO E UM TESTE !!";
 String results[ARRAYSIZE] = { numeroCall1 };
 
 void setup(){
+  pinMode(0, OUTPUT); //LED on Model B
+  pinMode(1, OUTPUT); //LED on Model A  or Pro
   pinMode(RESET, OUTPUT);
   digitalWrite(RESET, HIGH);
- //Begin serial communication with Arduino and Arduino IDE (Serial Monitor)
-  while (!Serial);  // espera a serial estabilizar
-  Serial.begin(BAUD_RATE);
+  configuraELiga();
+}
+
+void configuraELiga(){
+  //Begin serial communication with Arduino and Arduino IDE (Serial Monitor)
+  //Serial.begin(BAUD_RATE);
   
   //Begin serial communication with Arduino and SIM800L
   serialGSM.begin(BAUD_RATE);
 
-  Serial.println("Initializing...");
-  delay(1000);
-
-  Serial.println("1");
+  //Serial.println("1");
   serialGSM.println("AT"); //Once the handshake test is successful, it will back to OK
   updateSerial();
   serialGSM.println("AT+CSQ"); //Signal quality test, value range is 0-31 , 31 is the best
@@ -39,8 +41,20 @@ void setup(){
   updateSerial();
   serialGSM.println("AT+CREG?"); //Check whether it has registered in the network
   updateSerial();
-  Serial.println("AGUARDANDO"); 
+  //Serial.println("AGUARDANDO"); 
+  pisca(1);
   for (int i =0; i< ARRAYSIZE; i++) enviaSinalSocorro(results[i]);
+}
+
+void pisca(int qtd){
+  for (int i = 0; i <= qtd; i++) {
+    digitalWrite(0, HIGH);   // turn the LED on (HIGH is the voltage level)
+    digitalWrite(1, HIGH);
+    delay(500);               // wait for a second
+    digitalWrite(0, LOW);   // turn the LED on (HIGH is the voltage level)
+    digitalWrite(1, LOW);
+  }
+  
 }
 
 void enviaSinalSocorro(String telefone){
@@ -95,7 +109,7 @@ void fazLigacao(String telefone) {
 }
 
 void updateSerial(){
-  delay(100);
+  /*delay(100);
   while (Serial.available()) 
   {
     serialGSM.write(Serial.read());//Forward what Serial received to Software Serial Port
@@ -103,5 +117,5 @@ void updateSerial(){
   while(serialGSM.available()) 
   {
     Serial.write(serialGSM.read());//Forward what Software Serial received to Serial Port
-  }
+  }*/
 }
