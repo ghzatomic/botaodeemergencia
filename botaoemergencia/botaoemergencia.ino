@@ -1,9 +1,9 @@
 //#include <Sim800L.h>
 #include <SoftwareSerial.h>
 
-#define RX 3
-#define TX 4
-#define RESET 2
+#define RX 11
+#define TX 10
+#define RESET 3
 
 //Sim800L GSM(RX, TX, RESET);
 #define BAUD_RATE   9600
@@ -11,15 +11,13 @@
 
 SoftwareSerial serialGSM(RX, TX); //SIM800L Tx & Rx is connected to Arduino #3 & #2
 
-String mensagemSocorro="ISSO E UM TESTE !!";
+String mensagemSocorro="ALGO ACONTECEU, ME AJUDE !!";
 
 #define ARRAYSIZE 1
 #define numeroCall1 "02114981116166" 
 String results[ARRAYSIZE] = { numeroCall1 };
 
 void setup(){
-  pinMode(0, OUTPUT); //LED on Model B
-  pinMode(1, OUTPUT); //LED on Model A  or Pro
   pinMode(RESET, OUTPUT);
   digitalWrite(RESET, HIGH);
   configuraELiga();
@@ -27,12 +25,12 @@ void setup(){
 
 void configuraELiga(){
   //Begin serial communication with Arduino and Arduino IDE (Serial Monitor)
-  //Serial.begin(BAUD_RATE);
+  Serial.begin(BAUD_RATE);
   
   //Begin serial communication with Arduino and SIM800L
   serialGSM.begin(BAUD_RATE);
 
-  //Serial.println("1");
+  Serial.println("INICIANDO ...");
   serialGSM.println("AT"); //Once the handshake test is successful, it will back to OK
   updateSerial();
   serialGSM.println("AT+CSQ"); //Signal quality test, value range is 0-31 , 31 is the best
@@ -41,27 +39,17 @@ void configuraELiga(){
   updateSerial();
   serialGSM.println("AT+CREG?"); //Check whether it has registered in the network
   updateSerial();
-  //Serial.println("AGUARDANDO"); 
-  pisca(1);
-  for (int i =0; i< ARRAYSIZE; i++) enviaSinalSocorro(results[i]);
+  delay(10000);
+  Serial.println("AGUARDANDO"); 
+  enviaSinalSocorro();
+  //getGPSLoc();
 }
 
-void pisca(int qtd){
-  for (int i = 0; i <= qtd; i++) {
-    digitalWrite(0, HIGH);   // turn the LED on (HIGH is the voltage level)
-    digitalWrite(1, HIGH);
-    delay(500);               // wait for a second
-    digitalWrite(0, LOW);   // turn the LED on (HIGH is the voltage level)
-    digitalWrite(1, LOW);
-  }
-  
-}
-
-void enviaSinalSocorro(String telefone){
-  enviaSMS(telefone, mensagemSocorro);
+void enviaSinalSocorro(){
+  for (int i =0; i< ARRAYSIZE; i++) fazLigacao(results[i]);
   delay(1000);
-  fazLigacao(telefone);
-  delay(1000);
+  for (int i =0; i< ARRAYSIZE; i++) enviaSMS(results[i], mensagemSocorro);
+  delay(300000); // 5min
 }
 
 void enviaSMS(String telefone, String mensagem) {
@@ -75,7 +63,7 @@ void enviaSMS(String telefone, String mensagem) {
   delay(1000);
   serialGSM.println("AT+CMGF=0");
   delay(1000);
-  
+  Serial.println(serialGSM.read());
 }
 
 void config(){
@@ -94,22 +82,42 @@ void config(){
 }
 
 void loop() {
-  updateSerial();
+  //updateSerial();
+  enviaSinalSocorro();
   //update1();
 }
 
+void getGPSLoc(){
+  Serial.println("AT+SAPBR=3,1,\"Contype\",\"GPRS\"");
+  delay(1000);
+  Serial.println("AT+SAPBR=3,1,\"APN\",\"zap.vivo.com.br\"");
+  delay(1000);
+  Serial.println("AT+SAPBR=3,1,\"USER\",\"vivo\"");
+  delay(1000);
+  Serial.println("AT+SAPBR=3,1,\"PWD\",\"vivo\"");
+  delay(1000);
+  Serial.println("AT+SAPBR=1,1");
+  delay(1000);
+  Serial.println("AT+SAPBR=2,1");
+  delay(1000);
+  Serial.println("AT+CIPGSMLOC=1,1");
+  delay(1000);
+}
+
 void fazLigacao(String telefone) {
+  Serial.println("LIGANDO ..."+telefone);
   serialGSM.println("ATH0\n");
   serialGSM.print((char)26); 
+  delay(1000);
   serialGSM.println("ATD " + telefone + ";\n");
   serialGSM.print((char)26); 
-  delay(10000);
+  delay(30000);
   serialGSM.println("ATH");
   
 }
 
 void updateSerial(){
-  /*delay(100);
+  delay(100);
   while (Serial.available()) 
   {
     serialGSM.write(Serial.read());//Forward what Serial received to Software Serial Port
@@ -117,5 +125,5 @@ void updateSerial(){
   while(serialGSM.available()) 
   {
     Serial.write(serialGSM.read());//Forward what Software Serial received to Serial Port
-  }*/
+  }
 }
